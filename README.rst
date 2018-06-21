@@ -43,6 +43,13 @@ Usage
     #load file
     f = Fadapa('/path/to/fastqc_output_file.txt')
 
+    #or
+    f = Fadapa('/path/to/fastqc.zip')
+
+    #or
+    with open('/path/to/fastqc_data.txt') as fp :
+        f = Fadapa(fp)
+
     #get file name
     print(f.file_name)
 
