@@ -3,20 +3,49 @@ Python module to parse FastQC output data.
 """
 
 from __future__ import print_function
+from warnings import warn
+from zipfile import ZipFile
 
+class FastqcDataError(Exception): pass
 
 class Fadapa(object):
     """
     Returns a parsed data object for given fastqc data file
     """
 
-    def __init__(self, file_name, **kwargs):
+    def __init__(self, fp, **kwargs):
         """
-        :arg file_name: Name of fastqc_data text file.
-        :type file_name: str.
+        :arg fp: Name of fastqc_data text file, fastqc.zip file, or a file
+                 pointer to a fastqc_data text file. If a file pointer is
+                 provided, the user is expected to close the file after
+                 Fadapa is finished.
+        :type file_name: str or file pointer
         """
-        self.file_name = file_name
-        self._content = open(file_name, **kwargs).read().splitlines()
+        if isinstance(fp,str) : # filename, .txt or .zip
+            if fp.endswith('.zip') : # zip archive, open and extract .txt
+                with ZipFile(fp) as f :
+                    # check for fastqc_data.txt
+                    data_fn = [_ for _ in f.namelist() if _.endswith('fastqc_data.txt')]
+                    if len(data_fn) == 0 :
+                        raise FastqcDataError('No file matching *fastqc_data.txt '
+                               'found in zip archive, aborting')
+                    elif len(data_fn) > 1 :
+                        warn('Multiple files matching *fastqc_data.txt found '
+                                'in zip archive:\n{}\nChoosing {}'.format(
+                                    '\n'.join(data_fn),
+                                    data_fn[0]
+                                )
+                            )
+                    data_fn = data_fn[0]
+                    with f.open(data_fn, **kwargs) as data_f :
+                        self._content = data_f.read().decode().splitlines()
+            elif fp.endswith('.txt') :
+                with open(fp, **kwargs) as f :
+                    self._content = f.read().splitlines()
+
+        else : # file pointer
+            self._content = fp.read().splitlines()
+
         self._m_mark = '>>'
         self._m_end = '>>END_MODULE'
 
