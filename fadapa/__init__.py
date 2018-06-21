@@ -1,1 +1,1 @@
-from .fadapa import Fadapa
+from .fadapa import Fadapa, FastqcDataError
